@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>QRコードサブスクチェック</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body style="text-align:center; font-family:sans-serif;">
+
+<h2>QRコードをかざしてください</h2>
+
+<div id="reader" style="width:300px; margin:auto;"></div>
+
+<p id="result" style="margin-top:20px;"></p>
+
+<script>
+  function onScanSuccess(decodedText, decodedResult) {
+    const memberId = decodedText;
+    const storeId = "1"; // 店舗ID固定（必要に応じて2店舗に対応可）
+
+    fetch('【あなたのGASデプロイURL】', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ memberId, storeId })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        document.getElementById('result').innerText = "利用記録完了しました";
+      } else if (data.status === 'already_used') {
+        document.getElementById('result').innerText = "本日すでに利用されています";
+      } else {
+        document.getElementById('result').innerText = "エラー: " + data.message;
+      }
+      html5QrcodeScanner.clear(); // スキャン停止（必要に応じて）
+    })
+    .catch(error => {
+      document.getElementById('result').innerText = "通信エラー: " + error;
+    });
+  }
+
+  function onScanError(errorMessage) {
+    // スキャンエラー時は無視（カメラは継続）
+  }
+
+  const html5QrcodeScanner = new Html5QrcodeScanner(
+    "reader", { fps: 10, qrbox: 250 });
+  html5QrcodeScanner.render(onScanSuccess, onScanError);
+</script>
+
+</body>
+</html>
