@@ -2,84 +2,34 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 追加 -->
-  <title>QRコードスキャン（最終版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRコードスキャン（リダイレクト版）</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    body {
-      text-align: center;
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: white;
-    }
-    #reader {
-      width: 90%;
-      max-width: 400px;
-      margin: 20px auto;
-    }
-    #resultMessage {
-      font-size: 2rem;
-      margin-top: 20px;
-      padding: 20px;
-      border-radius: 10px;
-      display: none; /* 最初は非表示 */
-    }
-  </style>
 </head>
-<body>
+<body style="text-align:center; font-family:sans-serif;">
 
-<h2 style="font-size: 2rem; margin-top: 20px;">QRコードをかざしてください</h2>
+<h2 style="font-size:2rem; margin-top:20px;">QRコードをかざしてください</h2>
 
-<div id="reader"></div>
-
-<div id="resultMessage"></div>
+<div id="reader" style="width:90%; max-width:400px; margin:auto;"></div>
 
 <script>
 let html5QrcodeScanner;
 
 function onScanSuccess(decodedText, decodedResult) {
   const memberId = encodeURIComponent(decodedText.trim());
-  const storeId = "1"; // 店舗ID（必要なら変更可能）
+  const storeId = "1"; // 店舗ID固定
 
   html5QrcodeScanner.clear().then(() => {
-    // スキャン停止後に記録リクエスト
-    fetch(`https://script.google.com/macros/s/AKfycbykE-eNubUTV1_4K0Zj7-qGNm_qDsEx8O5bsvravVaG55gciWKCvC9SyUloKeiqEl8w/exec?memberId=${memberId}&storeId=${storeId}`)
-      .then(response => response.text())
-      .then(text => {
-        const resultMessage = document.getElementById('resultMessage');
-        resultMessage.style.display = 'block';
-        resultMessage.innerHTML = text;
-
-        if (text.includes("利用記録完了")) {
-          document.body.style.backgroundColor = "#ccffcc"; // 緑色背景
-          resultMessage.style.backgroundColor = "#ccffcc";
-          resultMessage.style.color = "black";
-        } else if (text.includes("本日すでに利用されています")) {
-          document.body.style.backgroundColor = "#ffcccc"; // 赤色背景
-          resultMessage.style.backgroundColor = "#ffcccc";
-          resultMessage.style.color = "black";
-        } else {
-          document.body.style.backgroundColor = "white"; // それ以外は白に戻す
-          resultMessage.style.backgroundColor = "white";
-          resultMessage.style.color = "black";
-        }
-      })
-      .catch(error => {
-        alert('通信エラー: ' + error.message);
-      });
+    window.location.href = `https://script.google.com/macros/s/AKfycbykE-eNubUTV1_4K0Zj7-qGNm_qDsEx8O5bsvravVaG55gciWKCvC9SyUloKeiqEl8w/exec?memberId=${memberId}&storeId=${storeId}`;
   }).catch(error => {
     console.error('スキャナ停止エラー:', error);
   });
 }
 
-function onScanError(errorMessage) {
-  // 読み取り失敗時は無視
-}
+function onScanError(errorMessage) {}
 
-// スキャナ初期化
 html5QrcodeScanner = new Html5QrcodeScanner(
-  "reader", { fps: 10, qrbox: { width: 250, height: 250 } });
+  "reader", { fps: 10, qrbox: 250 });
 html5QrcodeScanner.render(onScanSuccess, onScanError);
 </script>
 
