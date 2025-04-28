@@ -11,42 +11,46 @@
 
 <div id="reader" style="width:300px; margin:auto;"></div>
 
-<p id="result" style="margin-top:20px;"></p>
+<p id="result" style="margin-top:20px; color: green;"></p>
 
 <script>
-    function onScanSuccess(decodedText, decodedResult) {
-      const memberId = decodedText;
-      const storeId = "1"; // 店舗ID固定（必要なら選択式にできる）
-    
-      fetch('【あなたのGASデプロイURL】', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          memberId: memberId,
-          storeId: storeId
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'ok') {
-          document.getElementById('result').innerText = "利用記録完了しました";
-        } else if (data.status === 'already_used') {
-          document.getElementById('result').innerText = "本日すでに利用されています";
-        } else {
-          document.getElementById('result').innerText = "エラー: " + data.message;
-        }
-        html5QrcodeScanner.clear();
-      })
-      .catch(error => {
-        document.getElementById('result').innerText = "通信エラー: " + error;
-      });
-    }
+  function onScanSuccess(decodedText, decodedResult) {
+    const memberId = decodedText.trim(); // 念のため余白除去
+    const storeId = "1"; // 固定店舗ID（必要なら後で選択式にできます）
 
+    fetch('【あなたのGASデプロイURL】', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=UTF-8'
+      },
+      body: JSON.stringify({
+        memberId: memberId,
+        storeId: storeId
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('サーバーエラー');
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.status === 'ok') {
+        document.getElementById('result').innerText = "利用記録完了しました";
+      } else if (data.status === 'already_used') {
+        document.getElementById('result').innerText = "本日すでに利用されています";
+      } else {
+        document.getElementById('result').innerText = "エラー: " + data.message;
+      }
+      html5QrcodeScanner.clear(); // 読み取り成功後スキャン停止（必要なら再起動可）
+    })
+    .catch(error => {
+      document.getElementById('result').innerText = "通信エラー: " + error.message;
+    });
+  }
 
   function onScanError(errorMessage) {
-    // スキャンエラー時は無視（カメラは継続）
+    // エラー発生時も何もしない（スキャン継続）
   }
 
   const html5QrcodeScanner = new Html5QrcodeScanner(
