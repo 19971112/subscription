@@ -5,7 +5,7 @@
   <title>QRコードサブスクチェック</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body style="text-align:center; font-family:sans-serif;">
+<body style="text-align: center; font-family: sans-serif;">
 
 <h2>QRコードをかざしてください</h2>
 
@@ -15,10 +15,10 @@
 
 <script>
   function onScanSuccess(decodedText, decodedResult) {
-    const memberId = decodedText.trim(); // 念のため余白除去
-    const storeId = "1"; // 固定店舗ID（必要なら後で選択式にできます）
+    const memberId = decodedText.trim(); // 余白除去
+    const storeId = "1"; // 店舗ID（固定）
 
-    fetch('【あなたのGASデプロイURL】', {
+    fetch('https://script.google.com/macros/s/AKfycbykE-eNubUTV1_4K0Zj7-qGNm_qDsEx8O5bsvravVaG55gciWKCvC9SyUloKeiqEl8w/exec', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json;charset=UTF-8'
@@ -42,15 +42,15 @@
       } else {
         document.getElementById('result').innerText = "エラー: " + data.message;
       }
-      html5QrcodeScanner.clear(); // 読み取り成功後スキャン停止（必要なら再起動可）
+      html5QrcodeScanner.clear(); // 読み取り成功後スキャン停止
     })
     .catch(error => {
-      document.getElementById('result').innerText = "通信エラー: " + error.message;
+      document.getElementById('result').innerText = '通信エラー: ' + error.message;
     });
   }
 
   function onScanError(errorMessage) {
-    // エラー発生時も何もしない（スキャン継続）
+    // スキャンエラー時は無視して続行
   }
 
   const html5QrcodeScanner = new Html5QrcodeScanner(
