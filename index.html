@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>QRコードスキャン（最終版）</title>
+  <title>QRコードスキャン（最終修正版）</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body style="text-align:center; font-family:sans-serif;">
@@ -12,19 +12,27 @@
 <div id="reader" style="width:300px; margin:auto;"></div>
 
 <script>
+let html5QrcodeScanner;
+
 function onScanSuccess(decodedText, decodedResult) {
   const memberId = encodeURIComponent(decodedText.trim());
-  const storeId = "1"; // 店舗ID（固定、必要なら変更可能）
+  const storeId = "1"; // 店舗ID（固定）
 
-  // あなたのGASの新しいURLを使用
-  window.location.href = `https://script.google.com/macros/s/AKfycbykE-eNubUTV1_4K0Zj7-qGNm_qDsEx8O5bsvravVaG55gciWKCvC9SyUloKeiqEl8w/exec?memberId=${memberId}&storeId=${storeId}`;
+  // 一度読み取ったらスキャナを停止してからリダイレクト
+  html5QrcodeScanner.clear().then(() => {
+    // スキャナ停止成功後にリダイレクト
+    window.location.href = `https://script.google.com/macros/s/AKfycbykE-eNubUTV1_4K0Zj7-qGNm_qDsEx8O5bsvravVaG55gciWKCvC9SyUloKeiqEl8w/exec?memberId=${memberId}&storeId=${storeId}`;
+  }).catch(error => {
+    console.error('スキャナ停止エラー:', error);
+  });
 }
 
 function onScanError(errorMessage) {
-  // 読み取りエラーは無視
+  // エラー時は特に何もしない
 }
 
-const html5QrcodeScanner = new Html5QrcodeScanner(
+// スキャナ初期化
+html5QrcodeScanner = new Html5QrcodeScanner(
   "reader", { fps: 10, qrbox: 250 });
 html5QrcodeScanner.render(onScanSuccess, onScanError);
 </script>
