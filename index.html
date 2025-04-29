@@ -3,34 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QRコードスキャン（リダイレクト版）</title>
+  <title>店舗選択 → QRコードスキャン</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: white;
+    }
+    .store-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 20vh;
+    }
+    .store-button {
+      font-size: 2rem;
+      padding: 20px;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      width: 80%;
+      margin: 0 auto;
+    }
+    #reader {
+      width: 90%;
+      max-width: 400px;
+      margin: 20px auto;
+      display: none;
+    }
+    #resultMessage {
+      font-size: 8vw;
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+    }
+  </style>
 </head>
-<body style="text-align:center; font-family:sans-serif;">
 
-<h2 style="font-size:2rem; margin-top:20px;">QRコードをかざしてください</h2>
+<body>
 
-<div id="reader" style="width:90%; max-width:400px; margin:auto;"></div>
+<h2 id="mainTitle" style="font-size: 2rem; margin-top: 20px;">店舗を選択してください</h2>
+
+<div id="storeSelection" class="store-buttons">
+  <button class="store-button" onclick="startScan(1)">店舗1でスキャン</button>
+  <button class="store-button" onclick="startScan(2)">店舗2でスキャン</button>
+</div>
+
+<div id="reader"></div>
+<div id="resultMessage"></div>
 
 <script>
-let html5QrcodeScanner;
+let selectedStoreId = null;
+let html5QrcodeScanner = null;
 
-function onScanSuccess(decodedText, decodedResult) {
-  const memberId = encodeURIComponent(decodedText.trim());
-  const storeId = "1"; // 店舗ID固定
+// 店舗選択後にスキャン開始
+function startScan(storeId) {
+  selectedStoreId = storeId;
 
-  html5QrcodeScanner.clear().then(() => {
-    window.location.href = `https://script.google.com/macros/s/AKfycbykE-eNubUTV1_4K0Zj7-qGNm_qDsEx8O5bsvravVaG55gciWKCvC9SyUloKeiqEl8w/exec?memberId=${memberId}&storeId=${storeId}`;
-  }).catch(error => {
-    console.error('スキャナ停止エラー:', error);
+  document.getElementById('storeSelection').style.display = 'none';
+  document.getElementById('mainTitle').innerText = "QRコードをかざしてください";
+  document.getElementById('reader').style.display = 'block';
+
+  html5QrcodeScanner = new Html5Qrcode("reader");
+
+  const config = { 
+    fps: 10, 
+    qrbox: 250, 
+    facingMode: { exact: "environment" } // 背面カメラ優先
+  };
+
+  html5QrcodeScanner.start(
+    { facingMode: { exact: "environment" } },
+    config,
+    onScanSuccess,
+    onScanError
+  ).catch(err => {
+    // 背面カメラがない場合 fallback
+    html5QrcodeScanner.start(
+      { facingMode: "environment" }, // 柔軟な指定
+      config,
+      onScanSuccess,
+      onScanError
+    ).catch(err2 => {
+      // fallbackも失敗したらカメラ選択画面へ
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          html5QrcodeScanner.start(
+            devices[0].id,
+            config,
+            onScanSuccess,
+            onScanError
+          );
+        } else {
+          alert("カメラが検出できませんでした");
+        }
+      }).catch(err3 => {
+        alert("カメラ初期化エラー: " + err3);
+      });
+    });
   });
 }
 
-function onScanError(errorMessage) {}
+// スキャン成功時
+function onScanSuccess(decodedText, decodedResult) {
+  html5QrcodeScanner.stop().then(() => {
+    document.getElementById('reader').style.display = 'none';
+    document.getElementById('mainTitle').innerText = "結果を表示しています...";
 
-html5QrcodeScanner = new Html5QrcodeScanner(
-  "reader", { fps: 10, qrbox: 250 });
-html5QrcodeScanner.render(onScanSuccess, onScanError);
+    const memberId = encodeURIComponent(decodedText.trim());
+    const gasUrl = "https://script.google.com/macros/s/AKfycbykE-eNubUTV1_4K0Zj7-qGNm_qDsEx8O5bsvravVaG55gciWKCvC9SyUloKeiqEl8w/exec";
+
+    // GASへリダイレクト
+    window.location.href = `${gasUrl}?memberId=${memberId}&storeId=${selectedStoreId}`;
+  }).catch(err => {
+    console.error('スキャナ停止エラー:', err);
+  });
+}
+
+// スキャン失敗時
+function onScanError(errorMessage) {
+  // エラーは無視
+}
+
+// 画面放置対策（一定時間後に自動的にGitHubトップに戻る）
+setTimeout(() => {
+  window.location.href = "https://あなたのgithub.io/リポジトリ名/"; // ←ここをあなたのURLに変更
+}, 30000); // 30秒後に自動リダイレクト
+
 </script>
 
 </body>
