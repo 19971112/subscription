@@ -42,6 +42,16 @@
       border-radius: 10px;
       display: none;
     }
+    #backButton {
+      display: none;
+      margin-top: 30px;
+      font-size: 1.5rem;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 10px;
+    }
   </style>
 </head>
 
@@ -50,18 +60,19 @@
 <h2 id="mainTitle" style="font-size: 2rem; margin-top: 20px;">店舗を選択してください</h2>
 
 <div id="storeSelection" class="store-buttons">
-  <button class="store-button" onclick="startScan(1)">本店</button>
-  <button class="store-button" onclick="startScan(2)">自動車</button>
+  <button class="store-button" onclick="startScan(1)">店舗1でスキャン</button>
+  <button class="store-button" onclick="startScan(2)">店舗2でスキャン</button>
 </div>
 
 <div id="reader"></div>
 <div id="resultMessage"></div>
+<button id="backButton" onclick="goBack()">最初のページに戻る</button>
 
 <script>
 let selectedStoreId = null;
 let html5QrcodeScanner = null;
+const githubTopUrl = "https://あなたのgithub.io/リポジトリ名/"; // ★ここをあなたのURLに変更★
 
-// 店舗選択後にスキャン開始
 function startScan(storeId) {
   selectedStoreId = storeId;
 
@@ -74,7 +85,7 @@ function startScan(storeId) {
   const config = { 
     fps: 10, 
     qrbox: 250, 
-    facingMode: { exact: "environment" } // 背面カメラ優先
+    facingMode: { exact: "environment" }
   };
 
   html5QrcodeScanner.start(
@@ -83,14 +94,12 @@ function startScan(storeId) {
     onScanSuccess,
     onScanError
   ).catch(err => {
-    // 背面カメラがない場合 fallback
     html5QrcodeScanner.start(
-      { facingMode: "environment" }, // 柔軟な指定
+      { facingMode: "environment" },
       config,
       onScanSuccess,
       onScanError
     ).catch(err2 => {
-      // fallbackも失敗したらカメラ選択画面へ
       Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
           html5QrcodeScanner.start(
@@ -109,11 +118,10 @@ function startScan(storeId) {
   });
 }
 
-// スキャン成功時
 function onScanSuccess(decodedText, decodedResult) {
   html5QrcodeScanner.stop().then(() => {
     document.getElementById('reader').style.display = 'none';
-    document.getElementById('mainTitle').innerText = "結果を表示しています...";
+    document.getElementById('mainTitle').innerText = "記録しています...";
 
     const memberId = encodeURIComponent(decodedText.trim());
     const gasUrl = "https://script.google.com/macros/s/AKfycbykE-eNubUTV1_4K0Zj7-qGNm_qDsEx8O5bsvravVaG55gciWKCvC9SyUloKeiqEl8w/exec";
@@ -125,16 +133,29 @@ function onScanSuccess(decodedText, decodedResult) {
   });
 }
 
-// スキャン失敗時
 function onScanError(errorMessage) {
   // エラーは無視
 }
 
-// 画面放置対策（一定時間後に自動的にGitHubトップに戻る）
-setTimeout(() => {
-  window.location.href = "https://あなたのgithub.io/リポジトリ名/"; // ←ここをあなたのURLに変更
-}, 30000); // 30秒後に自動リダイレクト
+function goBack() {
+  window.location.href = githubTopUrl;
+}
 
+// ページを読み込んだら30秒後にトップへ自動リダイレクト（放置対策）
+setTimeout(() => {
+  window.location.href = githubTopUrl;
+}, 30000);
+
+// GAS側から戻った後、画面に戻るボタンを出す場合
+if (window.location.search.includes("completed=true")) {
+  document.getElementById('storeSelection').style.display = 'none';
+  document.getElementById('mainTitle').innerText = "記録完了しました";
+  document.getElementById('backButton').style.display = 'block';
+
+  setTimeout(() => {
+    goBack();
+  }, 10000); // 10秒後に自動で戻る
+}
 </script>
 
 </body>
